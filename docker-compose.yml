@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  web-client:
+    build: ./web-client
+    ports:
+      - "7013:80"
+    depends_on:
+      - core-service
+
+  core-service:
+    build: ./core-service
+    ports:
+      - "7012:7012"
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+    volumes:
+      - ./core-service/postgres-data:/var/lib/postgresql/data
+      - ./core-service/.pgpass:/app/.pgpass
+
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "7011:7011"
+
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+    volumes:
+      - ./core-service/postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
