@@ -396,3 +396,13 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+core-service/vendor/
+core-service/postgres-data/
+core-service/.pgpass
+
+ai-service/.env
+
+.DS_Store
+
+.venv
