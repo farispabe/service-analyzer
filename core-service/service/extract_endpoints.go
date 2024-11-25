@@ -175,6 +175,9 @@ func findImplementationWithPackageMethods(methodName, implementationPath string)
 	// Map to store methods in the package
 	packageMethods := make(map[string]string)
 
+	// Set to track visited methods to avoid redundant traversal
+	visited := make(map[string]bool)
+
 	filepath.Walk(implementationPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || !strings.HasSuffix(path, ".go") {
 			return nil
@@ -215,10 +218,16 @@ func findImplementationWithPackageMethods(methodName, implementationPath string)
 		return nil
 	})
 
-	// Add codes of local calls to the implementation
+	// Add codes of local calls to the implementation (recursively)
 	for _, call := range localCalls {
-		if code, exists := packageMethods[call]; exists {
+		if code, exists := packageMethods[call]; exists && !visited[call] {
+			// Mark this method as visited
+			visited[call] = true
 			implementation += "\n\n" + code
+
+			// Recursively add methods called by the current call
+			recursiveCalls, _, _ := findImplementationWithPackageMethods(call, implementationPath)
+			implementation += "\n\n" + recursiveCalls
 		}
 	}
 
