@@ -198,7 +198,12 @@ func findImplementation(methodName, implementationPath string) (string, []string
 			}
 
 			implFile = path
-			implementation = prettyPrintAST(funcDecl.Body, fset)
+			signature := prettyPrintAST(funcDecl.Type, fset) // Method signature
+			body := prettyPrintAST(funcDecl.Body, fset)      // Method body
+
+			// Combine signature and body
+			implementation = fmt.Sprintf("%s %s", signature, body)
+
 			localCalls = extractLocalCalls(funcDecl.Body)
 
 			return false
