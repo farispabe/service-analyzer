@@ -37,3 +37,12 @@ type Diagram struct {
 	DiagramCode   string `json:"diagram_code"`
 	Image         []byte `json:"image"`
 }
+
+type Endpoint struct {
+	InterfaceName      string   `json:"interface_name"`
+	MethodName         string   `json:"method_name"`
+	InterfaceFile      string   `json:"interface_file"`
+	Implementation     string   `json:"implementation"`
+	ImplementationFile string   `json:"implementation_file"`
+	LocalCalls         []string `json:"local_calls"`
+}

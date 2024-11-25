@@ -38,6 +38,7 @@ func main() {
 	r.HandleFunc("/repository/{repo_id}/diagrams", service.GetLatestDiagrams).Methods("GET")
 	r.HandleFunc("/repository/{repo_id}/summaries/all", service.GetAllSummaries).Methods("GET")
 	r.HandleFunc("/repository/{repo_id}/diagrams/all", service.GetAllDiagramsByType).Methods("GET")
+	r.HandleFunc("/extract-endpoints", service.ExtractEndpointsHandler).Methods("POST")
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":7012", nil))
