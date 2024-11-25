@@ -36,12 +36,6 @@ func ExtractEndpointsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("endpoints ", endpoints)
-	for _, endpoint := range endpoints {
-		fmt.Printf("Interface: %s\nMethod: %s\nInterface File: %s\nImplementation File: %s\nImplementation:\n%s\nLocal Calls: %v\n\n",
-			endpoint.InterfaceName, endpoint.MethodName, endpoint.InterfaceFile, endpoint.ImplementationFile, endpoint.Implementation, endpoint.LocalCalls)
-	}
-
 	// Respond with extracted endpoints
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(endpoints)
@@ -220,10 +214,9 @@ func findImplementationWithPackageMethods(methodName, implementationPath string)
 
 	// Add codes of local calls to the implementation (recursively)
 	for _, call := range localCalls {
-		if code, exists := packageMethods[call]; exists && !visited[call] {
+		if _, exists := packageMethods[call]; exists && !visited[call] {
 			// Mark this method as visited
 			visited[call] = true
-			implementation += "\n\n" + code
 
 			// Recursively add methods called by the current call
 			recursiveCalls, _, _ := findImplementationWithPackageMethods(call, implementationPath)
