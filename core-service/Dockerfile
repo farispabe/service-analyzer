@@ -14,17 +14,16 @@ FROM alpine:latest
 
 WORKDIR /app
 
-# Install PostgreSQL client and wait-for-it.sh
-RUN apk add --no-cache postgresql-client wget && \
+# Install required tools: PostgreSQL client, git, bash, and wait-for-it.sh
+RUN apk add --no-cache bash postgresql-client git wget && \
     wget -O /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x /wait-for-it.sh
 
+# Copy files from the builder stage
 COPY --from=builder /app/core-service /app/core-service
 COPY ./migrations /app/migrations
 COPY ./entrypoint.sh /app/entrypoint.sh
 COPY ./.pgpass /app/.pgpass
-
-RUN apk add --no-cache bash postgresql-client
 
 RUN chmod +x /app/entrypoint.sh
 RUN chmod 600 /app/.pgpass

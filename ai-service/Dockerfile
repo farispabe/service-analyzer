@@ -24,4 +24,4 @@ COPY . .
 EXPOSE 7011
 
 # Set the command to start the application with gunicorn
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:7011", "main:app"]
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:7011", "main:app", "--log-level=debug", "--access-logfile=-", "--error-logfile=-"]

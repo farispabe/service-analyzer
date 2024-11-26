@@ -2,3 +2,5 @@ Flask==2.0.1
 Werkzeug==2.0.1
 flask-cors==3.0.10  # Add flask-cors for CORS support
 gunicorn==20.0.4
+openai==0.28.0
+python-dotenv==1.0.0
