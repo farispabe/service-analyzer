@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -17,20 +18,35 @@ import (
 func ExtractEndpointsHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse request JSON
 	var request struct {
-		RepoRoot string `json:"repo_root"`
+		RepositoryURL string `json:"repository_url"`
+		Pattern       string `json:"pattern"`
+		AccessToken   string `json:"access_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if request.RepoRoot == "" {
-		http.Error(w, "Repository path is required", http.StatusBadRequest)
+	if request.RepositoryURL == "" {
+		http.Error(w, "Repository URL is required", http.StatusBadRequest)
 		return
 	}
 
+	if request.Pattern == "" {
+		http.Error(w, "Pattern is required", http.StatusBadRequest)
+		return
+	}
+
+	// Clone the repository
+	repoRoot, err := cloneRepository(request.RepositoryURL, request.AccessToken)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to clone repository: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(repoRoot) // Clean up cloned repository after use
+
 	// Extract endpoints
-	endpoints, err := extractEndpoints(request.RepoRoot)
+	endpoints, err := extractEndpoints(repoRoot)
 	if err != nil {
 		fmt.Printf("Error extracting endpoints: %v\n", err)
 		return
@@ -39,6 +55,35 @@ func ExtractEndpointsHandler(w http.ResponseWriter, r *http.Request) {
 	// Respond with extracted endpoints
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(endpoints)
+}
+
+func cloneRepository(repoURL string, accessToken string) (string, error) {
+	// Derive the project name from the repository URL
+	parts := strings.Split(repoURL, "/")
+	projectName := strings.TrimSuffix(parts[len(parts)-1], ".git")
+
+	// Clone the repository into /tmp/repo/<projectName>
+	repoRoot := filepath.Join("/tmp/repo", projectName)
+	err := os.MkdirAll("/tmp/repo", os.ModePerm)
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	}
+
+	// Construct HTTPS URL with the access token
+	if strings.Contains(repoURL, "http") {
+		repoURL = strings.Replace(repoURL, "https://", "https://"+accessToken+"@", 1)
+	}
+
+	// Use git clone with authentication
+	cmd := exec.Command("git", "clone", repoURL, repoRoot)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to clone repository: %w", err)
+	}
+
+	return repoRoot, nil
 }
 
 func extractEndpoints(repoRoot string) ([]Endpoint, error) {
