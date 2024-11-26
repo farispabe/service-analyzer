@@ -37,8 +37,12 @@ func ExtractEndpointsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Add token to the repository URL
+	authenticatedRepoURL := addAccessTokenToURL(request.RepositoryURL, request.AccessToken)
+	fmt.Println("authenticated repo url : ", authenticatedRepoURL)
+
 	// Clone the repository
-	repoRoot, err := cloneRepository(request.RepositoryURL, request.AccessToken)
+	repoRoot, err := cloneRepository(authenticatedRepoURL)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to clone repository: %v", err), http.StatusInternalServerError)
 		return
@@ -57,7 +61,17 @@ func ExtractEndpointsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(endpoints)
 }
 
-func cloneRepository(repoURL string, accessToken string) (string, error) {
+func addAccessTokenToURL(repoURL, accessToken string) string {
+	// Parse the URL to split protocol and the rest of the URL
+	parts := strings.Split(repoURL, "://")
+	if len(parts) != 2 {
+		return repoURL // Return original URL if it doesn't match expected format
+	}
+	// Insert the token before the domain
+	return fmt.Sprintf("%s://oauth2:%s@%s", parts[0], accessToken, parts[1])
+}
+
+func cloneRepository(repoURL string) (string, error) {
 	// Derive the project name from the repository URL
 	parts := strings.Split(repoURL, "/")
 	projectName := strings.TrimSuffix(parts[len(parts)-1], ".git")
@@ -67,11 +81,6 @@ func cloneRepository(repoURL string, accessToken string) (string, error) {
 	err := os.MkdirAll("/tmp/repo", os.ModePerm)
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp directory: %w", err)
-	}
-
-	// Construct HTTPS URL with the access token
-	if strings.Contains(repoURL, "http") {
-		repoURL = strings.Replace(repoURL, "https://", "https://"+accessToken+"@", 1)
 	}
 
 	// Use git clone with authentication
